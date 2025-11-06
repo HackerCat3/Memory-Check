@@ -25,7 +25,7 @@
             background-color: #1e1e1e;
             padding: 2rem 3rem;
             border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(168, 75, 75, 0.5);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
 
         h1 {
@@ -47,8 +47,10 @@
             height: 4.5rem;
             margin: 1.5rem 0;
             letter-spacing: 0.25rem;
-            /* Allows for a smooth size transition */
             transition: all 0.2s ease; 
+            
+            /* *** FIX 1: PREVENTS MOUSE SELECTION *** */
+            user-select: none;
         }
 
         #message {
@@ -60,7 +62,7 @@
 
         #user-input {
             width: 100%;
-            box-sizing: border-box; /* Includes padding in the width */
+            box-sizing: border-box; 
             padding: 1rem;
             font-size: 1.5rem;
             text-align: center;
@@ -117,8 +119,6 @@
     </div>
 
     <script>
-        // JavaScript for the game logic
-
         // --- 1. GET HTML ELEMENTS ---
         const promptDisplay = document.getElementById('prompt-display');
         const scoreDisplay = document.getElementById('score-display');
@@ -134,65 +134,46 @@
 
         // --- 3. GAME FUNCTIONS ---
 
-        /**
-         * Generates a long random string to be used for the game session.
-         */
         function generateFullString() {
             let result = '';
-            for (let i = 0; i < 100; i++) { // 100 levels max
+            for (let i = 0; i < 100; i++) { 
                 result += CHARACTERS.charAt(Math.floor(Math.random() * CHARACTERS.length));
             }
             return result;
         }
 
-        /**
-         * Starts a new game.
-         */
         function startGame() {
             fullString = generateFullString();
             currentLevel = 0;
             gameActive = true;
-
-            startButton.style.display = 'none'; // Hide start button
+            startButton.style.display = 'none';
             message.textContent = '';
-            
-            // Wait a moment before starting the first round
             setTimeout(nextRound, 1000);
         }
 
-        /**
-         * Moves the game to the next level.
-         */
         function nextRound() {
             currentLevel++;
             scoreDisplay.textContent = `Level: ${currentLevel}`;
             
             const promptString = fullString.substring(0, currentLevel);
             
-            // 1. Show the string to memorize
             promptDisplay.textContent = promptString;
             message.textContent = 'Memorize...';
             userInput.disabled = true;
             userInput.value = '';
 
-            // Calculate reveal time: 1.5s base + 0.5s per character
             const revealTime = 1500 + (currentLevel * 500);
 
-            // 2. Hide the string after the reveal time
             setTimeout(() => {
-                if (!gameActive) return; // Stop if game ended during wait
+                if (!gameActive) return; 
                 promptDisplay.textContent = '???';
                 message.textContent = 'Type!';
                 userInput.disabled = false;
-                userInput.focus(); // Automatically select the input box
+                userInput.focus(); 
             }, revealTime);
         }
 
-        /**
-         * Checks the user's input when they press Enter.
-         */
         function checkInput(event) {
-            // Only check if the key is 'Enter' and the game is active
             if (event.key !== 'Enter' || !gameActive) {
                 return;
             }
@@ -201,30 +182,31 @@
             const correctAnswer = fullString.substring(0, currentLevel);
 
             if (userAnswer === correctAnswer) {
-                // Correct! Move to the next round
                 message.textContent = 'Correct!';
-                setTimeout(nextRound, 1000); // Brief pause before next round
+                setTimeout(nextRound, 1000); 
             } else {
-                // Incorrect! End the game
                 endGame(correctAnswer);
             }
         }
 
-        /**
-         * Ends the game and shows the final score.
-         */
         function endGame(correctAnswer) {
             gameActive = false;
             message.textContent = `Game Over! You reached Level ${currentLevel}.`;
-            promptDisplay.textContent = correctAnswer; // Show the correct answer
+            promptDisplay.textContent = correctAnswer; 
             userInput.disabled = true;
             startButton.textContent = 'Play Again?';
-            startButton.style.display = 'block'; // Show the button again
+            startButton.style.display = 'block'; 
         }
 
         // --- 4. ADD EVENT LISTENERS ---
         startButton.addEventListener('click', startGame);
         userInput.addEventListener('keydown', checkInput);
+
+        /* *** FIX 2: PREVENTS PASTING *** */
+        userInput.addEventListener('paste', (event) => {
+            // Stop the paste action from happening
+            event.preventDefault();
+        });
 
     </script>
 </body>
