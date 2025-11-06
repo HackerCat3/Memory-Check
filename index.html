@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Typer</title>
+    <style>
+        /* CSS for the game */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        #game-container {
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            background-color: #1e1e1e;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(168, 75, 75, 0.5);
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-top: 0;
+        }
+
+        #score-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        #prompt-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #f4d03f;
+            height: 4.5rem;
+            margin: 1.5rem 0;
+            letter-spacing: 0.25rem;
+            /* Allows for a smooth size transition */
+            transition: all 0.2s ease; 
+        }
+
+        #message {
+            color: #bbbbbb;
+            height: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        #user-input {
+            width: 100%;
+            box-sizing: border-box; /* Includes padding in the width */
+            padding: 1rem;
+            font-size: 1.5rem;
+            text-align: center;
+            background-color: #333;
+            color: #fff;
+            border: 2px solid #555;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        #user-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        #user-input:disabled {
+            background-color: #2a2a2a;
+            color: #777;
+        }
+
+        #start-button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        #start-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Progressive Memory Typer</h1>
+        
+        <div id="score-display">Level: 0</div>
+        
+        <div id="prompt-display">Press Start</div>
+        
+        <div id="message"></div>
+        
+        <input type="text" id="user-input" disabled>
+        
+        <button id="start-button">Start Game</button>
+    </div>
+
+    <script>
+        // JavaScript for the game logic
+
+        // --- 1. GET HTML ELEMENTS ---
+        const promptDisplay = document.getElementById('prompt-display');
+        const scoreDisplay = document.getElementById('score-display');
+        const message = document.getElementById('message');
+        const userInput = document.getElementById('user-input');
+        const startButton = document.getElementById('start-button');
+
+        // --- 2. DEFINE GAME VARIABLES ---
+        let fullString = '';
+        let currentLevel = 0;
+        let gameActive = false;
+        const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+        // --- 3. GAME FUNCTIONS ---
+
+        /**
+         * Generates a long random string to be used for the game session.
+         */
+        function generateFullString() {
+            let result = '';
+            for (let i = 0; i < 100; i++) { // 100 levels max
+                result += CHARACTERS.charAt(Math.floor(Math.random() * CHARACTERS.length));
+            }
+            return result;
+        }
+
+        /**
+         * Starts a new game.
+         */
+        function startGame() {
+            fullString = generateFullString();
+            currentLevel = 0;
+            gameActive = true;
+
+            startButton.style.display = 'none'; // Hide start button
+            message.textContent = '';
+            
+            // Wait a moment before starting the first round
+            setTimeout(nextRound, 1000);
+        }
+
+        /**
+         * Moves the game to the next level.
+         */
+        function nextRound() {
+            currentLevel++;
+            scoreDisplay.textContent = `Level: ${currentLevel}`;
+            
+            const promptString = fullString.substring(0, currentLevel);
+            
+            // 1. Show the string to memorize
+            promptDisplay.textContent = promptString;
+            message.textContent = 'Memorize...';
+            userInput.disabled = true;
+            userInput.value = '';
+
+            // Calculate reveal time: 1.5s base + 0.5s per character
+            const revealTime = 1500 + (currentLevel * 500);
+
+            // 2. Hide the string after the reveal time
+            setTimeout(() => {
+                if (!gameActive) return; // Stop if game ended during wait
+                promptDisplay.textContent = '???';
+                message.textContent = 'Type!';
+                userInput.disabled = false;
+                userInput.focus(); // Automatically select the input box
+            }, revealTime);
+        }
+
+        /**
+         * Checks the user's input when they press Enter.
+         */
+        function checkInput(event) {
+            // Only check if the key is 'Enter' and the game is active
+            if (event.key !== 'Enter' || !gameActive) {
+                return;
+            }
+
+            const userAnswer = userInput.value.toUpperCase();
+            const correctAnswer = fullString.substring(0, currentLevel);
+
+            if (userAnswer === correctAnswer) {
+                // Correct! Move to the next round
+                message.textContent = 'Correct!';
+                setTimeout(nextRound, 1000); // Brief pause before next round
+            } else {
+                // Incorrect! End the game
+                endGame(correctAnswer);
+            }
+        }
+
+        /**
+         * Ends the game and shows the final score.
+         */
+        function endGame(correctAnswer) {
+            gameActive = false;
+            message.textContent = `Game Over! You reached Level ${currentLevel}.`;
+            promptDisplay.textContent = correctAnswer; // Show the correct answer
+            userInput.disabled = true;
+            startButton.textContent = 'Play Again?';
+            startButton.style.display = 'block'; // Show the button again
+        }
+
+        // --- 4. ADD EVENT LISTENERS ---
+        startButton.addEventListener('click', startGame);
+        userInput.addEventListener('keydown', checkInput);
+
+    </script>
+</body>
+</html>
